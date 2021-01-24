@@ -1,7 +1,8 @@
 {
   "env": {
     "es2021": true,
-    "node": true
+    "node": true,
+    "jest/globals": true
   },
   "extends": [
     "eslint:recommended",
@@ -15,7 +16,7 @@
     "ecmaVersion": 12,
     "project": "./tsconfig.json"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "jest"],
   "rules": {
     "@typescript-eslint/promise-function-async": "error",
     "@typescript-eslint/no-explicit-any": "error"
