@@ -8,7 +8,6 @@ import {
 } from 'discord.js';
 import handleShowcaseMessage from './showcase';
 import handleSoundtestMessage from './soundtest';
-import handleMemeMessage from './memes';
 import {
   handleIcGbRequestMessage,
   handleIcGbReviewReaction,
@@ -22,7 +21,6 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
   }
 
   if (msg.guild?.id === config.FORTIES_GUILD) {
-    await handleMemeMessage(msg);
     await handleShowcaseMessage(msg, client);
     await handleSoundtestMessage(msg, client);
     await handleIcGbRequestMessage(msg, client);
