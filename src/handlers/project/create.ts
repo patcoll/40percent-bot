@@ -84,6 +84,7 @@ async function createProjectChannel(
   const categoryId =
     reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
   const newChannel = await guild.channels.create(reviewParams.slug, {
+    type: 'GUILD_TEXT',
     parent: categoryId,
     permissionOverwrites: getProjectChannelPermissions(
       guild,
