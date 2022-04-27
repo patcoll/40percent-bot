@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { Snowflake, MessageAttachment, Guild } from 'discord.js';
+import { Snowflake, Attachment, Guild } from 'discord.js';
 import { ProjectRequestParams } from './requestParams';
 
 type ProjectReviewParams = {
@@ -34,8 +34,8 @@ function formatSlug(projectName: string): string {
   });
 }
 
-function serialize(reviewParams: ProjectReviewParams): MessageAttachment {
-  return new MessageAttachment(
+function serialize(reviewParams: ProjectReviewParams): Attachment {
+  return new Attachment(
     Buffer.from(JSON.stringify(reviewParams)),
     'metadata.json'
   );

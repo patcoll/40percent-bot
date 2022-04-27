@@ -4,13 +4,22 @@ import {
   Client,
   TextChannel,
   Guild,
-  MessageAttachment,
-  MessageActionRow,
-  MessageButton,
+  Attachment,
   ButtonInteraction,
   MessageReaction,
   User,
   PartialMessageReaction,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  CommandInteraction,
+  ChatInputCommandInteraction,
+  TextInputBuilder,
+  ComponentType,
+  TextInputComponent,
+  TextInputStyle,
+  ModalBuilder,
+  ModalSubmitInteraction,
 } from 'discord.js';
 import { ProjectAnnouncementParams } from './announcementParams';
 import { ProjectReviewParams } from './reviewParams';
@@ -19,6 +28,12 @@ import RequestParams from './requestParams';
 import CreateProject from './create';
 
 import axios from 'axios';
+import {
+  activateProjectReviewEmbed,
+  getEmbedConfig,
+  initProjectReviewEmbed,
+} from '../../lib/projectReviewEmbed';
+import showDescriptionInputModal from '../../lib/showDescriptionInputModal';
 
 function formatIcGbReviewMessage({
   name,
@@ -45,28 +60,64 @@ async function handleIcGbRequestMessage(
       const reviewChannel = (await client.channels.fetch(
         config.IC_GB_REVIEW_CHANNEL
       )) as TextChannel;
-      const approveRejectRow = new MessageActionRow().addComponents(
-        new MessageButton()
-          .setCustomId('approveProjectReview')
-          .setLabel('Approve')
-          .setStyle('SUCCESS'),
-        new MessageButton()
-          .setCustomId('rejectProjectReview')
-          .setLabel('Reject')
-          .setStyle('DANGER')
-      );
+      const approveRejectRow =
+        new ActionRowBuilder<ButtonBuilder>().addComponents([
+          new ButtonBuilder()
+            .setCustomId('approveProjectReview')
+            .setLabel('Approve')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('rejectProjectReview')
+            .setLabel('Reject')
+            .setStyle(ButtonStyle.Danger),
+        ]);
       await reviewChannel.send({
         content: reviewMessage,
-        files: [
-          new MessageAttachment(requestParams.imageUrl),
-          serializedParams,
-        ],
+        files: [new Attachment(requestParams.imageUrl), serializedParams],
         components: [approveRejectRow],
       });
       await msg.reply('your request was successfully submitted for review.');
     } catch (error) {
       return;
     }
+  }
+}
+
+async function handleIcGbRequestInteraction(
+  interaction: ChatInputCommandInteraction,
+  client: Client
+): Promise<void> {
+  try {
+    const embedInitialConfig = await getEmbedConfig(interaction);
+    const reviewEmbed = await initProjectReviewEmbed(
+      embedInitialConfig,
+      client
+    );
+    await showDescriptionInputModal(interaction, reviewEmbed);
+  } catch (error) {
+    console.log(error);
+    return;
+  }
+}
+
+async function handleDescriptionModalInteraction(
+  interaction: ModalSubmitInteraction,
+  client: Client
+): Promise<void> {
+  try {
+    const reviewChannel = (await client.channels.fetch(
+      config.IC_GB_REVIEW_CHANNEL
+    )) as TextChannel;
+    const embedMessageId = interaction.customId.split('-')[1];
+    const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
+    const description = interaction.components[0].components[0].value;
+    await activateProjectReviewEmbed(embedMessage, description);
+    await interaction.reply(
+      'Your project was successfully submitted for review.'
+    );
+  } catch (error) {
+    console.log(error);
+    return;
   }
 }
 
@@ -105,13 +156,13 @@ async function handleIcGbReviewInteraction(
         }),
         typedMessage.edit({
           components: [
-            new MessageActionRow().addComponents(
-              new MessageButton()
+            new ActionRowBuilder<ButtonBuilder>().addComponents([
+              new ButtonBuilder()
                 .setCustomId('approveProjectReviewConfirmation')
                 .setLabel('Approved')
-                .setStyle('SUCCESS')
-                .setDisabled(true)
-            ),
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true),
+            ]),
           ],
         }),
       ]);
@@ -127,13 +178,13 @@ async function handleIcGbReviewInteraction(
       }),
       typedMessage.edit({
         components: [
-          new MessageActionRow().addComponents(
-            new MessageButton()
+          new ActionRowBuilder<ButtonBuilder>().addComponents([
+            new ButtonBuilder()
               .setCustomId('rejectProjectReviewConfirmation')
               .setLabel('Rejected')
-              .setStyle('DANGER')
-              .setDisabled(true)
-          ),
+              .setStyle(ButtonStyle.Danger)
+              .setDisabled(true),
+          ]),
         ],
       }),
     ]);
@@ -214,7 +265,9 @@ async function handleProjectAnnouncementReaction(
 
 export {
   handleIcGbRequestMessage,
+  handleIcGbRequestInteraction,
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
   handleIcGbReviewInteraction,
+  handleDescriptionModalInteraction,
 };

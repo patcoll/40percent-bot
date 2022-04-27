@@ -1,4 +1,4 @@
-import { Message, MessageAttachment, Client, TextChannel } from 'discord.js';
+import { Message, Attachment, Client, TextChannel } from 'discord.js';
 import config from '../config';
 import containsValidUrl from '../utils/containsValidUrl';
 
@@ -26,7 +26,7 @@ export default async function handleSoundtestMessage(
         `40s channel posted soundtest: ${msg.author.username} ${filteredUserInput}`
       );
       if (attachmentUrl) {
-        const attachment = new MessageAttachment(attachmentUrl);
+        const attachment = new Attachment(attachmentUrl);
         await soundTestChannel.send({
           content: messageToSend,
           files: [attachment],

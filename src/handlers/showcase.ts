@@ -1,12 +1,6 @@
-import {
-  Message,
-  Client,
-  TextChannel,
-  MessageEmbed,
-  MessageActionRow,
-  MessageButton,
-} from 'discord.js';
+import { Message, Client, TextChannel } from 'discord.js';
 import config from '../config';
+import addShowcaseEmbed from '../lib/addShowcaseEmbed';
 
 export default async function handleShowcaseMessage(
   msg: Message,
@@ -16,10 +10,6 @@ export default async function handleShowcaseMessage(
     msg.content.includes(`<#${config.FORTIES_SHOWCASE}>`) &&
     msg.attachments.size > 0
   ) {
-    const showcaseChannel = (await client.channels.fetch(
-      config.FORTIES_SHOWCASE
-    )) as TextChannel;
-
     const acceptedFileFormats = new RegExp(
       '.(jpe?g|png|gif|bmp|webp|tiff?)$',
       'i'
@@ -45,41 +35,26 @@ export default async function handleShowcaseMessage(
         : trimmedContent;
     };
 
-    const embed = new MessageEmbed({
-      author: {
-        name: msg.author.username,
-        icon_url: msg.author.avatarURL() ?? msg.author.defaultAvatarURL,
+    await addShowcaseEmbed(
+      {
+        author: {
+          name: msg.author.username,
+          icon_url: msg.author.avatarURL() ?? msg.author.defaultAvatarURL,
+        },
+        description: trimDescription(msg.content),
+        image: {
+          url: image.url,
+          proxyURL: image.proxyURL,
+          height: image.height ?? 0,
+          width: image.width ?? 0,
+        },
+        footer: {
+          text: `#${(msg.channel as TextChannel).name}`,
+        },
       },
-      description: trimDescription(msg.content),
-      image: {
-        url: image.url,
-        proxyURL: image.proxyURL,
-        height: image.height ?? 0,
-        width: image.width ?? 0,
-      },
-      timestamp: new Date(),
-      footer: {
-        text: `#${(msg.channel as TextChannel).name}`,
-      },
-    });
-
-    const msgLinkButton = new MessageActionRow().addComponents(
-      new MessageButton()
-        .setLabel('Original Message')
-        .setStyle('LINK')
-        .setURL(msg.url)
+      msg.url,
+      client
     );
-
-    const embedMessage = await showcaseChannel.send({
-      embeds: [embed],
-      components: [msgLinkButton],
-    });
-
-    console.log('40s channel posted showcase:', {
-      author: msg.author.tag,
-      message_url: embedMessage.url,
-      image: embed.image,
-    });
 
     return;
   }

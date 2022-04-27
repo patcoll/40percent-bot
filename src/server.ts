@@ -2,15 +2,18 @@ import config from './config.js';
 import {
   Client,
   Message,
-  Intents,
   MessageReaction,
   PartialMessageReaction,
   User,
   Interaction,
+  Partials,
+  IntentsBitField,
 } from 'discord.js';
 import handleShowcaseMessage from './handlers/showcase';
 import handleSoundtestMessage from './handlers/soundtest';
 import {
+  handleDescriptionModalInteraction,
+  handleIcGbRequestInteraction,
   handleIcGbRequestMessage,
   handleIcGbReviewInteraction,
   handleProjectAnnouncementInteraction,
@@ -18,6 +21,7 @@ import {
 } from './handlers/project';
 import fetchPartial from './utils/fetchPartial';
 import callHandlers from './utils/callHandlers.js';
+import { handleShowcaseCommand } from './handlers/showcaseCommand.js';
 
 function messageShouldBeHandled(msg: Message): boolean {
   // Ignore messages from bots
@@ -42,11 +46,17 @@ function interactionShouldBeHandled(interaction: Interaction) {
 
 const client = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMessageReactions,
   ],
-  partials: ['MESSAGE', 'CHANNEL', 'REACTION', 'USER', 'GUILD_MEMBER'],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.User,
+    Partials.GuildMember,
+  ],
 });
 
 client.once('ready', () => {
@@ -64,6 +74,15 @@ client.on('interactionCreate', async (interaction) => {
       handleIcGbReviewInteraction(interaction, client),
       handleProjectAnnouncementInteraction(interaction)
     );
+  }
+  if (interaction.isChatInputCommand()) {
+    await handleIcGbRequestInteraction(interaction, client);
+  }
+  if (interaction.isMessageContextMenuCommand()) {
+    await handleShowcaseCommand(interaction, client);
+  }
+  if (interaction.isModalSubmit()) {
+    await handleDescriptionModalInteraction(interaction, client);
   }
 });
 

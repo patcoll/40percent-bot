@@ -1,4 +1,4 @@
-import { Snowflake, Message } from 'discord.js';
+import { Snowflake, Message, ChatInputCommandInteraction } from 'discord.js';
 
 type ProjectRequestParams = {
   type: string;
@@ -7,6 +7,60 @@ type ProjectRequestParams = {
   description: string;
   imageUrl: string;
 };
+
+async function parseInteraction(
+  interaction: ChatInputCommandInteraction
+): Promise<ProjectRequestParams> {
+  const errors = [];
+
+  // No need to validate type since it's picked from a set of prescribed options
+  const type = interaction.options.getString('type', true);
+
+  // Validate that name is less than 32 characters
+  const name = interaction.options.getString('name', true).trim();
+  const nameValid = name.length < 32;
+  if (!nameValid) {
+    errors.push(
+      `Project name must be fewer than 32 characters ("${name}" is ${name.length} characters.)`
+    );
+  }
+
+  const description = 'asdf';
+  // interaction.options.getString('description', true);
+  // const descriptionValid =
+  //   description.length > 0 &&
+  //   description.length <= 1000 &&
+  //   lines.length <= 15;
+  // if (!descriptionValid)
+  //     errors.push(
+  //       `Project description (line three+) must be fewer than 1000 characters and/or fewer than 15 lines.
+  //      Your description was ${description.length} characters and ${descriptionLineCount} lines.`
+  //     );
+
+  // Validate that the attachment is an image
+  const attachment = interaction.options.getAttachment('attachment', true);
+  const contentType = attachment.contentType ?? 'null';
+  console.log(contentType);
+  if (!contentType.startsWith('image/')) {
+    errors.push(`Attachment must be an image. Yours was a(n) ${contentType}.`);
+  }
+
+  if (errors.length === 0) {
+    return {
+      type,
+      name,
+      ownerId: interaction.user.id,
+      description,
+      imageUrl: attachment.url,
+    };
+  } else {
+    const errorMsg = ['Your request had the following issues:', ...errors].join(
+      '\n   - '
+    );
+    await interaction.reply(errorMsg);
+    throw Error('FormatError');
+  }
+}
 
 async function parse(msg: Message): Promise<ProjectRequestParams> {
   const lines = msg.content.split('\n');
@@ -74,4 +128,5 @@ export { ProjectRequestParams };
 
 export default {
   parse,
+  parseInteraction,
 };

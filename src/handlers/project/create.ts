@@ -7,14 +7,17 @@ import {
   Role,
   OverwriteResolvable,
   Snowflake,
-  MessageAttachment,
+  Attachment,
   User,
-  MessageActionRow,
-  MessageButton,
-  CategoryChannel,
+  // CategoryChannel,
+  ChannelType,
+  ActionRowBuilder,
+  ButtonStyle,
+  PermissionFlagsBits,
 } from 'discord.js';
 import AnnouncementParams from './announcementParams';
 import { ProjectAnnouncementParams } from './announcementParams';
+import { ButtonBuilder } from '@discordjs/builders';
 
 async function generateProjectBoilerplate(
   reviewParams: ProjectReviewParams,
@@ -66,14 +69,16 @@ async function sortCategoryChannels(
   guild: Guild,
   categoryId: Snowflake
 ): Promise<void> {
-  const category = await guild.channels.fetch(categoryId);
-  if (category instanceof CategoryChannel) {
-    const categoryChannels = [...category.children.values()];
-    categoryChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
-    for await (const [index, channel] of categoryChannels.entries()) {
-      await channel.setPosition(index);
-    }
-  }
+  // TODO: There's something wrong with the typings in this function, fix them.
+  // const category =
+  await guild.channels.fetch(categoryId);
+  // if (category instanceof CategoryChannel) {
+  //   const categoryChannels = [...category.children.valueOf().values()];
+  //   categoryChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
+  //   for await (const [index, channel] of categoryChannels.entries()) {
+  //     await channel.setPosition(index);
+  //   }
+  // }
 }
 
 async function createProjectChannel(
@@ -84,7 +89,7 @@ async function createProjectChannel(
   const categoryId =
     reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
   const newChannel = await guild.channels.create(reviewParams.slug, {
-    type: 'GUILD_TEXT',
+    type: ChannelType.GuildText,
     parent: categoryId,
     permissionOverwrites: getProjectChannelPermissions(
       guild,
@@ -108,26 +113,26 @@ function getProjectChannelPermissions(
       // disallow everyone from seeing the channel by default
       {
         id: guild.roles.everyone.id,
-        deny: ['VIEW_CHANNEL'],
+        deny: [PermissionFlagsBits.ViewChannel],
       },
       // allow role members to read and send messages
       {
         id: roleId,
-        allow: ['VIEW_CHANNEL'],
+        allow: [PermissionFlagsBits.ViewChannel],
       },
       // allow wallet destroyer members to read and send messages
       {
         id: config.WALLET_DESTROYER_ROLE,
-        allow: ['VIEW_CHANNEL'],
+        allow: [PermissionFlagsBits.ViewChannel],
       },
       // make the owner a project-channel level mod
       {
         id: ownerId,
         allow: [
-          'MANAGE_CHANNELS',
-          'SEND_MESSAGES',
-          'VIEW_CHANNEL',
-          'MANAGE_MESSAGES',
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ManageMessages,
         ],
       },
     ];
@@ -138,10 +143,10 @@ function getProjectChannelPermissions(
       {
         id: ownerId,
         allow: [
-          'MANAGE_CHANNELS',
-          'SEND_MESSAGES',
-          'VIEW_CHANNEL',
-          'MANAGE_MESSAGES',
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ManageMessages,
         ],
       },
     ];
@@ -160,21 +165,21 @@ async function announceProject(
   const serializedParams = AnnouncementParams.serialize(
     projectAnnouncementParams
   );
-  const joinLeaveRow = new MessageActionRow().addComponents(
-    new MessageButton()
+  const joinLeaveRow = new ActionRowBuilder<ButtonBuilder>().addComponents([
+    new ButtonBuilder()
       .setCustomId('joinProjectRole')
       .setLabel('Join')
-      .setStyle('SUCCESS'),
-    new MessageButton()
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
       .setCustomId('leaveProjectRole')
       .setLabel('Leave')
-      .setStyle('DANGER')
-  );
+      .setStyle(ButtonStyle.Danger),
+  ]);
   await announceChannel.send({
     content: `Announcing the ${reviewParams.type} for ${reviewParams.name} by <@${reviewParams.ownerId}>!
     ${reviewParams.description}
     To gain access to the project channel <#${channel.id}>, join the role <@&${projectAnnouncementParams.roleId}> with the button below!`,
-    files: [new MessageAttachment(reviewParams.imageUrl), serializedParams],
+    files: [new Attachment(reviewParams.imageUrl), serializedParams],
     components: [joinLeaveRow],
   });
 }
