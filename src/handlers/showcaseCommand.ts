@@ -13,15 +13,18 @@ async function handleShowcaseCommand(
 ): Promise<void> {
   const msg = interaction.targetMessage as Message;
 
-  if (
-    msg.content.includes(`<#${config.FORTIES_SHOWCASE}>`) ||
-    msg.channelId === config.FORTIES_SHOWCASE
-  ) {
+  if (msg.channelId === config.FORTIES_SHOWCASE) {
     await interaction.reply(
       `Can't showcase a message in <#${config.FORTIES_SHOWCASE}>`
     );
     return;
   }
+
+  if (msg.author.id !== interaction.user.id) {
+    await interaction.reply('You can only showcase your own message.');
+    return;
+  }
+
   if (msg.attachments.size !== 1) {
     await interaction.reply('Must have exactly 1 attachment to showcase.');
     return;
@@ -40,6 +43,7 @@ async function handleShowcaseCommand(
     );
     return;
   }
+
   const trimmedDescription =
     msg.content.length > 512
       ? `${msg.content.substring(0, 512).trim()}...`
