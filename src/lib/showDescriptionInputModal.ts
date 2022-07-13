@@ -13,7 +13,7 @@ async function showDescriptionInputModal(
 ): Promise<void> {
   await interaction.showModal(
     new ModalBuilder()
-      .setCustomId(`descriptionInput-${reviewEmbedMessage.id}`)
+      .setCustomId(`proj-${reviewEmbedMessage.id}`)
       .setTitle('Describe')
       .addComponents([
         new ActionRowBuilder<TextInputBuilder>().addComponents([

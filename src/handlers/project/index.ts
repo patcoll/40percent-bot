@@ -23,6 +23,7 @@ import CreateProject from './create';
 
 import axios from 'axios';
 import {
+  activateProjectReviewEmbed,
   getEmbedConfig,
   initProjectReviewEmbed,
 } from '../../lib/projectReviewEmbed';
@@ -100,24 +101,28 @@ async function handleDescriptionModalInteraction(
   interaction: ModalSubmitInteraction,
   client: Client
 ): Promise<void> {
-  console.log(interaction);
-  await Promise.resolve(client);
-  return;
-  // try {
-  //   const reviewChannel = (await client.channels.fetch(
-  //     config.IC_GB_REVIEW_CHANNEL
-  //   )) as TextChannel;
-  //   const embedMessageId = interaction.customId.split('-')[1];
-  //   const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
-  //   const description = interaction.components[0].components[0].
-  //   await activateProjectReviewEmbed(embedMessage, description);
-  //   await interaction.reply(
-  //     'Your project was successfully submitted for review.'
-  //   );
-  // } catch (error) {
-  //   console.log(error);
-  //   return;
-  // }
+  if (!interaction.customId.startsWith('proj-')) {
+    return;
+  }
+  try {
+    const reviewChannel = (await client.channels.fetch(
+      config.IC_GB_REVIEW_CHANNEL
+    )) as TextChannel;
+    const embedMessageId = interaction.customId.split('proj-')[1];
+    console.log(embedMessageId);
+    const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
+    const description = interaction.fields.getTextInputValue(
+      'descriptionTextInput'
+    );
+    console.log(description);
+    await activateProjectReviewEmbed(embedMessage, description);
+    await interaction.reply(
+      'Your project was successfully submitted for review.'
+    );
+  } catch (error) {
+    console.log(error);
+    return;
+  }
 }
 
 async function handleIcGbReviewInteraction(
