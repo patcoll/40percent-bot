@@ -100,21 +100,25 @@ client.on('messageCreate', async (msg) => {
 
 client.on('messageReactionAdd', async (reaction, user) => {
   await Promise.all([fetchPartial(reaction), fetchPartial(user)]);
+  if (user.partial) {
+    return;
+  }
 
-  if (!reactionShouldBeHandled(reaction, user as User)) return;
+  if (!reactionShouldBeHandled(reaction, user)) return;
 
-  await callHandlers(
-    handleProjectAnnouncementReaction(reaction, user as User, 'add')
-  );
+  await callHandlers(handleProjectAnnouncementReaction(reaction, user, 'add'));
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
   await Promise.all([fetchPartial(reaction), fetchPartial(user)]);
+  if (user.partial) {
+    return;
+  }
 
-  if (!reactionShouldBeHandled(reaction, user as User)) return;
+  if (!reactionShouldBeHandled(reaction, user)) return;
 
   await callHandlers(
-    handleProjectAnnouncementReaction(reaction, user as User, 'remove')
+    handleProjectAnnouncementReaction(reaction, user, 'remove')
   );
 });
 
