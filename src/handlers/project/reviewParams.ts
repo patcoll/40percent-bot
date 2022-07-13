@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { Snowflake, Attachment, Guild } from 'discord.js';
+import { Snowflake, Guild, AttachmentBuilder } from 'discord.js';
 import { ProjectRequestParams } from './requestParams';
 
 type ProjectReviewParams = {
@@ -34,11 +34,10 @@ function formatSlug(projectName: string): string {
   });
 }
 
-function serialize(reviewParams: ProjectReviewParams): Attachment {
-  return new Attachment(
-    Buffer.from(JSON.stringify(reviewParams)),
-    'metadata.json'
-  );
+function serialize(reviewParams: ProjectReviewParams): AttachmentBuilder {
+  return new AttachmentBuilder(
+    Buffer.from(JSON.stringify(reviewParams))
+  ).setName('metadata.json');
 }
 
 async function validate(

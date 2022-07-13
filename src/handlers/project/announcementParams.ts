@@ -1,4 +1,4 @@
-import { Snowflake, Attachment } from 'discord.js';
+import { Snowflake, AttachmentBuilder } from 'discord.js';
 
 type ProjectAnnouncementParams = {
   version: string;
@@ -17,11 +17,12 @@ function generate(
   };
 }
 
-function serialize(announcementParams: ProjectAnnouncementParams): Attachment {
-  return new Attachment(
-    Buffer.from(JSON.stringify(announcementParams)),
-    'metadata.json'
-  );
+function serialize(
+  announcementParams: ProjectAnnouncementParams
+): AttachmentBuilder {
+  return new AttachmentBuilder(
+    Buffer.from(JSON.stringify(announcementParams))
+  ).setName('metadata.json');
 }
 
 export { ProjectAnnouncementParams };

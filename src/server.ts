@@ -8,6 +8,7 @@ import {
   Interaction,
   Partials,
   IntentsBitField,
+  InteractionType,
 } from 'discord.js';
 import handleShowcaseMessage from './handlers/showcase';
 import handleSoundtestMessage from './handlers/soundtest';
@@ -81,7 +82,7 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.isMessageContextMenuCommand()) {
     await handleShowcaseCommand(interaction, client);
   }
-  if (interaction.isModalSubmit()) {
+  if (interaction.type === InteractionType.ModalSubmit) {
     await handleDescriptionModalInteraction(interaction, client);
   }
 });

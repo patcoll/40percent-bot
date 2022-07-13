@@ -4,7 +4,6 @@ import {
   Client,
   TextChannel,
   Guild,
-  Attachment,
   ButtonInteraction,
   MessageReaction,
   User,
@@ -12,14 +11,9 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  CommandInteraction,
   ChatInputCommandInteraction,
-  TextInputBuilder,
-  ComponentType,
-  TextInputComponent,
-  TextInputStyle,
-  ModalBuilder,
   ModalSubmitInteraction,
+  AttachmentBuilder,
 } from 'discord.js';
 import { ProjectAnnouncementParams } from './announcementParams';
 import { ProjectReviewParams } from './reviewParams';
@@ -29,7 +23,6 @@ import CreateProject from './create';
 
 import axios from 'axios';
 import {
-  activateProjectReviewEmbed,
   getEmbedConfig,
   initProjectReviewEmbed,
 } from '../../lib/projectReviewEmbed';
@@ -73,7 +66,10 @@ async function handleIcGbRequestMessage(
         ]);
       await reviewChannel.send({
         content: reviewMessage,
-        files: [new Attachment(requestParams.imageUrl), serializedParams],
+        files: [
+          new AttachmentBuilder(requestParams.imageUrl),
+          serializedParams,
+        ],
         components: [approveRejectRow],
       });
       await msg.reply('your request was successfully submitted for review.');
@@ -104,21 +100,24 @@ async function handleDescriptionModalInteraction(
   interaction: ModalSubmitInteraction,
   client: Client
 ): Promise<void> {
-  try {
-    const reviewChannel = (await client.channels.fetch(
-      config.IC_GB_REVIEW_CHANNEL
-    )) as TextChannel;
-    const embedMessageId = interaction.customId.split('-')[1];
-    const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
-    const description = interaction.components[0].components[0].value;
-    await activateProjectReviewEmbed(embedMessage, description);
-    await interaction.reply(
-      'Your project was successfully submitted for review.'
-    );
-  } catch (error) {
-    console.log(error);
-    return;
-  }
+  console.log(interaction);
+  await Promise.resolve(client);
+  return;
+  // try {
+  //   const reviewChannel = (await client.channels.fetch(
+  //     config.IC_GB_REVIEW_CHANNEL
+  //   )) as TextChannel;
+  //   const embedMessageId = interaction.customId.split('-')[1];
+  //   const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
+  //   const description = interaction.components[0].components[0].
+  //   await activateProjectReviewEmbed(embedMessage, description);
+  //   await interaction.reply(
+  //     'Your project was successfully submitted for review.'
+  //   );
+  // } catch (error) {
+  //   console.log(error);
+  //   return;
+  // }
 }
 
 async function handleIcGbReviewInteraction(
@@ -130,9 +129,7 @@ async function handleIcGbReviewInteraction(
   if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
     return;
   }
-  // Explicit narrowing because we know this will be a normal message
-  // sent in the 40s guild
-  const typedMessage = interaction.message as Message;
+  const typedMessage = interaction.message;
   const guild = typedMessage.guild as Guild;
   const reviewer = interaction.user;
 
@@ -194,7 +191,7 @@ async function handleIcGbReviewInteraction(
 async function handleProjectAnnouncementInteraction(
   interaction: ButtonInteraction
 ): Promise<void> {
-  const typedMessage = interaction.message as Message;
+  const typedMessage = interaction.message;
   // Only handle interactions in the IC/GB announcement channel
   if (typedMessage.channelId !== config.IC_GB_ANNOUNCE_CHANNEL) {
     return;

@@ -7,17 +7,16 @@ import {
   Role,
   OverwriteResolvable,
   Snowflake,
-  Attachment,
   User,
-  // CategoryChannel,
   ChannelType,
   ActionRowBuilder,
   ButtonStyle,
   PermissionFlagsBits,
+  ButtonBuilder,
+  AttachmentBuilder,
 } from 'discord.js';
 import AnnouncementParams from './announcementParams';
 import { ProjectAnnouncementParams } from './announcementParams';
-import { ButtonBuilder } from '@discordjs/builders';
 
 async function generateProjectBoilerplate(
   reviewParams: ProjectReviewParams,
@@ -88,7 +87,8 @@ async function createProjectChannel(
 ): Promise<TextChannel> {
   const categoryId =
     reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
-  const newChannel = await guild.channels.create(reviewParams.slug, {
+  const newChannel = await guild.channels.create({
+    name: reviewParams.slug,
     type: ChannelType.GuildText,
     parent: categoryId,
     permissionOverwrites: getProjectChannelPermissions(
@@ -179,7 +179,7 @@ async function announceProject(
     content: `Announcing the ${reviewParams.type} for ${reviewParams.name} by <@${reviewParams.ownerId}>!
     ${reviewParams.description}
     To gain access to the project channel <#${channel.id}>, join the role <@&${projectAnnouncementParams.roleId}> with the button below!`,
-    files: [new Attachment(reviewParams.imageUrl), serializedParams],
+    files: [new AttachmentBuilder(reviewParams.imageUrl), serializedParams],
     components: [joinLeaveRow],
   });
 }

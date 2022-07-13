@@ -1,6 +1,5 @@
 import {
   Client,
-  Message,
   MessageContextMenuCommandInteraction,
   TextChannel,
 } from 'discord.js';
@@ -11,7 +10,7 @@ async function handleShowcaseCommand(
   interaction: MessageContextMenuCommandInteraction,
   client: Client
 ): Promise<void> {
-  const msg = interaction.targetMessage as Message;
+  const msg = interaction.targetMessage;
 
   if (msg.channelId === config.FORTIES_SHOWCASE) {
     await interaction.reply(
