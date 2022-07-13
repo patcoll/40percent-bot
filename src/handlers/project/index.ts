@@ -125,7 +125,7 @@ async function handleDescriptionModalInteraction(
   }
 }
 
-async function handleIcGbReviewInteraction(
+async function DEPRECATED_handleIcGbReviewInteraction(
   interaction: ButtonInteraction,
   client: Client
 ): Promise<void> {
@@ -270,6 +270,6 @@ export {
   handleIcGbRequestInteraction,
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
-  handleIcGbReviewInteraction,
+  DEPRECATED_handleIcGbReviewInteraction,
   handleDescriptionModalInteraction,
 };
