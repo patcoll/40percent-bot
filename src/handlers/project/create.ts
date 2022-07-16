@@ -79,44 +79,21 @@ async function sortCategoryChannels(
   guild: Guild,
   categoryId: Snowflake
 ): Promise<void> {
-  // TODO: Re-enable this once issue with setPositions is fixed
-  // const parent = await guild.channels.fetch(categoryId);
-  // if (parent?.type !== ChannelType.GuildCategory) {
-  //   return;
-  // }
-  // // parent.children.
-  // const channelsInCategory = [...parent.children.valueOf().values()];
-  // const nonThreadChannels = channelsInCategory.filter(
-  //   (channel) => !channel.isThread()
-  // ) as NonThreadGuildBasedChannel[];
-  // nonThreadChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
-  // console.log('about to set the positions');
+  const parent = await guild.channels.fetch(categoryId);
+  if (parent?.type !== ChannelType.GuildCategory) {
+    return;
+  }
+  const channelsInCategory = [...parent.children.valueOf().values()];
+  const nonThreadChannels = channelsInCategory.filter(
+    (channel) => !channel.isThread()
+  ) as NonThreadGuildBasedChannel[];
+  nonThreadChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
+  const channelPositions = nonThreadChannels.map((channel, position) => ({
+    channel: channel.id,
+    position,
+  }));
 
-  // const channelPositions = nonThreadChannels.map((channel, position) => ({
-  //   channel: channel.id,
-  //   position,
-  //   parent: parent.id,
-  // }));
-
-  // // console.log('the positions are', channelPositions);
-  // try {
-  //   console.log(guild.channels);
-  //   await guild.channels.setPositions(channelPositions);
-  // } catch (e) {
-  //   console.log(e);
-  //   throw e;
-  // }
-
-  // TODO: There's something wrong with the typings in this function, fix them.
-  // const category =
-  await guild.channels.fetch(categoryId);
-  // if (category instanceof CategoryChannel) {
-  //   const categoryChannels = [...category.children.valueOf().values()];
-  //   categoryChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
-  //   for await (const [index, channel] of categoryChannels.entries()) {
-  //     await channel.setPosition(index);
-  //   }
-  // }
+  await guild.channels.setPositions(channelPositions);
 }
 
 async function createProjectChannel(
