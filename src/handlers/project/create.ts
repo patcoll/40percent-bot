@@ -1,5 +1,4 @@
 import config from '../../config';
-import { ProjectReviewParams } from './reviewParams';
 import {
   Client,
   TextChannel,
@@ -7,41 +6,36 @@ import {
   Role,
   OverwriteResolvable,
   Snowflake,
-  User,
-  ActionRowBuilder,
-  ButtonStyle,
   PermissionFlagsBits,
-  ButtonBuilder,
-  AttachmentBuilder,
   ChannelType,
   NonThreadGuildBasedChannel,
 } from 'discord.js';
-import AnnouncementParams from './announcementParams';
-import { ProjectAnnouncementParams } from './announcementParams';
+import {
+  createAnnouncement,
+  getAnnouncementEmbedFromReviewEmbed,
+} from '../../lib/announcementEmbed';
+import {
+  CompletedProjectReviewEmbed,
+  getEmbedField,
+} from '../../lib/projectReviewEmbed';
 
 async function generateProjectBoilerplate(
-  reviewParams: ProjectReviewParams,
+  reviewEmbed: CompletedProjectReviewEmbed,
   guild: Guild,
-  reviewer: User,
+  reviewerId: Snowflake,
   client: Client
 ): Promise<void> {
-  const role = await createProjectRole(
-    reviewParams.name,
+  const roleName = getEmbedField(reviewEmbed, 'name');
+  const role = await createProjectRole(roleName, guild, reviewerId, client);
+  const ownerId = getEmbedField(reviewEmbed, 'creator');
+  const channel = await createProjectChannel(
+    getEmbedField(reviewEmbed, 'type') as 'IC' | 'GB',
+    ownerId,
+    getEmbedField(reviewEmbed, 'slug'),
     guild,
-    reviewer.id,
-    client
+    role
   );
-  const channel = await createProjectChannel(reviewParams, guild, role);
-  const projectAnnouncementParams = AnnouncementParams.generate(
-    reviewParams.ownerId,
-    role.id
-  );
-  await announceProject(
-    reviewParams,
-    projectAnnouncementParams,
-    channel,
-    client
-  );
+  await announceProject(reviewEmbed, role.id, channel, client);
 }
 
 async function createProjectRole(
@@ -87,22 +81,23 @@ async function sortCategoryChannels(
 }
 
 async function createProjectChannel(
-  reviewParams: ProjectReviewParams,
+  type: 'IC' | 'GB',
+  ownerId: Snowflake,
+  slug: string,
   guild: Guild,
   role: Role
 ): Promise<TextChannel> {
-  const categoryId =
-    reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
+  const categoryId = type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
 
   const permissions = getProjectChannelPermissions(
     guild,
     role.id,
-    reviewParams.ownerId,
-    reviewParams.type
+    ownerId,
+    type
   );
 
   const newChannel = await guild.channels.create({
-    name: reviewParams.slug,
+    name: slug,
     type: ChannelType.GuildText,
     parent: categoryId,
     permissionOverwrites: permissions,
@@ -165,34 +160,17 @@ function getProjectChannelPermissions(
 }
 
 async function announceProject(
-  reviewParams: ProjectReviewParams,
-  projectAnnouncementParams: ProjectAnnouncementParams,
+  reviewEmbed: CompletedProjectReviewEmbed,
+  roleId: string,
   channel: TextChannel,
   client: Client
 ): Promise<void> {
-  const announceChannel = (await client.channels.fetch(
-    config.IC_GB_ANNOUNCE_CHANNEL
-  )) as TextChannel;
-  const serializedParams = AnnouncementParams.serialize(
-    projectAnnouncementParams
+  const announcementEmbed = getAnnouncementEmbedFromReviewEmbed(
+    reviewEmbed,
+    roleId,
+    channel.id
   );
-  const joinLeaveRow = new ActionRowBuilder<ButtonBuilder>().addComponents([
-    new ButtonBuilder()
-      .setCustomId('joinProjectRole')
-      .setLabel('Join')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('leaveProjectRole')
-      .setLabel('Leave')
-      .setStyle(ButtonStyle.Danger),
-  ]);
-  await announceChannel.send({
-    content: `Announcing the ${reviewParams.type} for ${reviewParams.name} by <@${reviewParams.ownerId}>!
-    ${reviewParams.description}
-    To gain access to the project channel <#${channel.id}>, join the role <@&${projectAnnouncementParams.roleId}> with the button below!`,
-    files: [new AttachmentBuilder(reviewParams.imageUrl), serializedParams],
-    components: [joinLeaveRow],
-  });
+  await createAnnouncement(announcementEmbed, client);
 }
 
 export default {

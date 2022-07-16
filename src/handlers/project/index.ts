@@ -142,121 +142,42 @@ async function handleIcGbReviewInteraction(
   const reviewer = interaction.user;
 
   if (interaction.customId === 'approveProjectReview') {
-    const reviewParams = extractReviewParamsFromEmbed(
-      interaction.message.embeds[0] as CompletedProjectReviewEmbed
-    );
-
-    const validParams = await ReviewParams.validate(reviewParams, guild);
-    if (validParams) {
-      await Promise.allSettled([
-        CreateProject.boilerplate(reviewParams, guild, reviewer, client),
-        interaction.reply({
-          content: 'Project approved: generated boilerplate',
-        }),
-        typedMessage.edit({
-          components: [
-            new ActionRowBuilder<ButtonBuilder>().addComponents([
-              new ButtonBuilder()
-                .setCustomId('approveProjectReviewConfirmation')
-                .setLabel('Approved')
-                .setStyle(ButtonStyle.Success)
-                .setDisabled(true),
-            ]),
-          ],
-        }),
-      ]);
-    } else {
-      await interaction.reply('Role or channel already exists.');
-    }
-  }
-
-  if (interaction.customId === 'rejectProjectReview') {
-    await Promise.allSettled([
-      interaction.reply({
-        content: 'Please let the user know why their project was rejected.',
+    const reviewEmbed = interaction.message
+      .embeds[0] as CompletedProjectReviewEmbed;
+    await CreateProject.boilerplate(reviewEmbed, guild, reviewer.id, client),
+      await interaction.reply({
+        content: 'Project approved: generated boilerplate',
       }),
-      typedMessage.edit({
+      await typedMessage.edit({
         components: [
           new ActionRowBuilder<ButtonBuilder>().addComponents([
             new ButtonBuilder()
-              .setCustomId('rejectProjectReviewConfirmation')
-              .setLabel('Rejected')
-              .setStyle(ButtonStyle.Danger)
+              .setCustomId('approveProjectReviewConfirmation')
+              .setLabel('Approved')
+              .setStyle(ButtonStyle.Success)
               .setDisabled(true),
           ]),
         ],
-      }),
-    ]);
-  }
-}
-
-async function DEPRECATED_handleIcGbReviewInteraction(
-  interaction: ButtonInteraction,
-  client: Client
-): Promise<void> {
-  // Only handle interactions in the IC/GB review channel
-  if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
-    return;
-  }
-  if (interaction.message.embeds.length > 0) {
-    return;
-  }
-  const typedMessage = interaction.message;
-  const guild = await client.guilds.fetch(config.FORTIES_GUILD);
-  const reviewer = interaction.user;
-
-  if (interaction.customId === 'approveProjectReview') {
-    const attachmentUrls = [...interaction.message.attachments.values()].map(
-      (attachment) => attachment.url
-    );
-    if (attachmentUrls.length !== 2) {
-      await interaction.reply('Must include both an image and metadata.');
-      return;
-    }
-    const response = await axios.get<ProjectReviewParams>(attachmentUrls[1]);
-    const reviewParams = response.data;
-
-    const validParams = await ReviewParams.validate(reviewParams, guild);
-    if (validParams) {
-      await Promise.allSettled([
-        CreateProject.boilerplate(reviewParams, guild, reviewer, client),
-        interaction.reply({
-          content: 'Project approved: generated boilerplate',
-        }),
-        typedMessage.edit({
-          components: [
-            new ActionRowBuilder<ButtonBuilder>().addComponents([
-              new ButtonBuilder()
-                .setCustomId('approveProjectReviewConfirmation')
-                .setLabel('Approved')
-                .setStyle(ButtonStyle.Success)
-                .setDisabled(true),
-            ]),
-          ],
-        }),
-      ]);
-    } else {
-      await interaction.reply('Role or channel already exists.');
-    }
+      });
+  } else {
+    await interaction.reply('Role or channel already exists.');
   }
 
   if (interaction.customId === 'rejectProjectReview') {
-    await Promise.allSettled([
-      interaction.reply({
-        content: 'Please let the user know why their project was rejected.',
-      }),
-      typedMessage.edit({
-        components: [
-          new ActionRowBuilder<ButtonBuilder>().addComponents([
-            new ButtonBuilder()
-              .setCustomId('rejectProjectReviewConfirmation')
-              .setLabel('Rejected')
-              .setStyle(ButtonStyle.Danger)
-              .setDisabled(true),
-          ]),
-        ],
-      }),
-    ]);
+    await interaction.reply({
+      content: 'Please let the user know why their project was rejected.',
+    });
+    await typedMessage.edit({
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents([
+          new ButtonBuilder()
+            .setCustomId('rejectProjectReviewConfirmation')
+            .setLabel('Rejected')
+            .setStyle(ButtonStyle.Danger)
+            .setDisabled(true),
+        ]),
+      ],
+    });
   }
 }
 
@@ -271,28 +192,58 @@ async function handleProjectAnnouncementInteraction(
   const attachmentUrls = typedMessage.attachments.map(
     (attachment) => attachment.url
   );
-  const response = await axios.get<ProjectAnnouncementParams>(
-    attachmentUrls[1]
-  );
-  const projectParams = response.data;
-  const guild = interaction.guild as Guild;
-  const member = await guild.members.fetch(interaction.user.id);
-  if (interaction.customId === 'joinProjectRole') {
-    await Promise.allSettled([
-      member.roles.add(projectParams.roleId),
-      interaction.reply({
-        content: `Joined role <@&${projectParams.roleId}>!`,
-        ephemeral: true,
-      }),
-    ]);
-  } else if (interaction.customId === 'leaveProjectRole') {
-    await Promise.allSettled([
-      member.roles.remove(projectParams.roleId),
-      interaction.reply({
-        content: `Left role <@&${projectParams.roleId}>!`,
-        ephemeral: true,
-      }),
-    ]);
+  if (attachmentUrls.length > 0) {
+    const embed = typedMessage.embeds[0];
+    const roleField = embed.fields?.find((field) => field.name === 'role-id');
+    if (roleField === undefined) {
+      throw Error('Role not found in announcement embed');
+    }
+    const roleId = roleField.value;
+    const guild = interaction.guild as Guild;
+    const member = await guild.members.fetch(interaction.user.id);
+    if (interaction.customId === 'joinProjectRole') {
+      await Promise.allSettled([
+        member.roles.add(roleId),
+        interaction.reply({
+          content: `Joined role <@&${roleId}>!`,
+          ephemeral: true,
+        }),
+      ]);
+    } else if (interaction.customId === 'leaveProjectRole') {
+      await Promise.allSettled([
+        member.roles.remove(roleId),
+        interaction.reply({
+          content: `Left role <@&${roleId}>!`,
+          ephemeral: true,
+        }),
+      ]);
+    }
+  }
+  // The old announcement system, using attachments and metadata JSON
+  else {
+    const response = await axios.get<ProjectAnnouncementParams>(
+      attachmentUrls[1]
+    );
+    const projectParams = response.data;
+    const guild = interaction.guild as Guild;
+    const member = await guild.members.fetch(interaction.user.id);
+    if (interaction.customId === 'joinProjectRole') {
+      await Promise.allSettled([
+        member.roles.add(projectParams.roleId),
+        interaction.reply({
+          content: `Joined role <@&${projectParams.roleId}>!`,
+          ephemeral: true,
+        }),
+      ]);
+    } else if (interaction.customId === 'leaveProjectRole') {
+      await Promise.allSettled([
+        member.roles.remove(projectParams.roleId),
+        interaction.reply({
+          content: `Left role <@&${projectParams.roleId}>!`,
+          ephemeral: true,
+        }),
+      ]);
+    }
   }
 }
 
@@ -337,7 +288,6 @@ export {
   handleIcGbRequestInteraction,
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
-  DEPRECATED_handleIcGbReviewInteraction,
   handleIcGbReviewInteraction,
   handleDescriptionModalInteraction,
 };

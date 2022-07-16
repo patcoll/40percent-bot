@@ -16,7 +16,6 @@ import {
   handleDescriptionModalInteraction,
   handleIcGbRequestInteraction,
   handleIcGbRequestMessage,
-  DEPRECATED_handleIcGbReviewInteraction,
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
   handleIcGbReviewInteraction,
@@ -78,7 +77,6 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.isButton()) {
     await callHandlers(
       handleIcGbReviewInteraction(interaction, client),
-      DEPRECATED_handleIcGbReviewInteraction(interaction, client),
       handleProjectAnnouncementInteraction(interaction)
     );
   }

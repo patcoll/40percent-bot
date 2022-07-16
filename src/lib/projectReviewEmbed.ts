@@ -54,6 +54,7 @@ interface ProjectReviewEmbedConfig {
 }
 
 interface CompletedProjectReviewEmbed extends Embed {
+  title: string;
   fields: [
     {
       name: 'type';
@@ -263,4 +264,5 @@ export {
   activateProjectReviewEmbed,
   getEmbedConfig,
   extractReviewParamsFromEmbed,
+  getEmbedField,
 };
