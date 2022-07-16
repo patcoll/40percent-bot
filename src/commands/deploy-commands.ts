@@ -4,7 +4,7 @@ import {
   ApplicationCommandType,
 } from 'discord.js';
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v9';
+import { Routes } from 'discord-api-types/v10';
 import config from '../config.js';
 
 const commands: ApplicationCommandData[] = [
@@ -35,15 +35,6 @@ const commands: ApplicationCommandData[] = [
           'A short name for your project, must be fewer than 32 characters',
         required: true,
       },
-      // Can we get the description in a modal?
-      // https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-modal
-      // {
-      //   name: 'description',
-      //   type: ApplicationCommandOptionType.String,
-      //   description:
-      //     'A short name for your project, must be fewer than 1000 characters and/or fewer than 15 lines.',
-      //   required: true,
-      // },
       {
         name: 'attachment',
         type: ApplicationCommandOptionType.Attachment,
