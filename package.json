@@ -16,8 +16,8 @@
     "@discordjs/rest": "^0.4.1",
     "@types/node-fetch": "^2.5.10",
     "axios": "^0.21.0",
-    "discord-api-types": "^0.23.1",
-    "discord.js": "^14.0.0-dev.1650672498-3617093",
+    "discord-api-types": "^0.36.1",
+    "discord.js": "^14.0.0-dev.1657671090-1ed605e",
     "node-cache": "^5.1.2",
     "slugify": "^1.4.6"
   },
