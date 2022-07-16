@@ -112,12 +112,10 @@ async function handleDescriptionModalInteraction(
       config.IC_GB_REVIEW_CHANNEL
     )) as TextChannel;
     const embedMessageId = interaction.customId.split('proj-')[1];
-    console.log(embedMessageId);
     const embedMessage = await reviewChannel.messages.fetch(embedMessageId);
     const description = interaction.fields.getTextInputValue(
       'descriptionTextInput'
     );
-    console.log(description);
     await activateProjectReviewEmbed(embedMessage, description);
     await interaction.reply(
       'Your project was successfully submitted for review.'
@@ -133,7 +131,6 @@ async function handleIcGbReviewInteraction(
   client: Client
 ): Promise<void> {
   // Only handle interactions in the IC/GB review channel
-  // console.log(interaction);
   if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
     return;
   }
@@ -198,7 +195,6 @@ async function DEPRECATED_handleIcGbReviewInteraction(
   client: Client
 ): Promise<void> {
   // Only handle interactions in the IC/GB review channel
-  console.log(interaction);
   if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
     return;
   }

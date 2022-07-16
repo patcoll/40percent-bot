@@ -129,7 +129,6 @@ async function activateProjectReviewEmbed(
   description: string
 ): Promise<void> {
   const fetchedMessage = await message.fetch();
-  console.log(fetchedMessage);
   const embed = new EmbedBuilder(fetchedMessage.embeds[0].data);
   embed.setFields([
     ...(fetchedMessage.embeds[0].data.fields ?? []).slice(0, 3),
@@ -175,7 +174,6 @@ async function getEmbedConfig(
   // Validate that the attachment is an image
   const attachment = interaction.options.getAttachment('attachment', true);
   const contentType = attachment.contentType ?? 'null';
-  console.log(contentType);
   if (!contentType.startsWith('image/')) {
     errors.push(`Attachment must be an image. Yours was a(n) ${contentType}.`);
   }

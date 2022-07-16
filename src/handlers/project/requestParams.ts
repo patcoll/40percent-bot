@@ -25,22 +25,11 @@ async function parseInteraction(
     );
   }
 
-  const description = 'asdf';
-  // interaction.options.getString('description', true);
-  // const descriptionValid =
-  //   description.length > 0 &&
-  //   description.length <= 1000 &&
-  //   lines.length <= 15;
-  // if (!descriptionValid)
-  //     errors.push(
-  //       `Project description (line three+) must be fewer than 1000 characters and/or fewer than 15 lines.
-  //      Your description was ${description.length} characters and ${descriptionLineCount} lines.`
-  //     );
+  const description = '';
 
   // Validate that the attachment is an image
   const attachment = interaction.options.getAttachment('attachment', true);
   const contentType = attachment.contentType ?? 'null';
-  console.log(contentType);
   if (!contentType.startsWith('image/')) {
     errors.push(`Attachment must be an image. Yours was a(n) ${contentType}.`);
   }
