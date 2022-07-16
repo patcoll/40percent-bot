@@ -24,6 +24,8 @@ import CreateProject from './create';
 import axios from 'axios';
 import {
   activateProjectReviewEmbed,
+  CompletedProjectReviewEmbed,
+  extractReviewParamsFromEmbed,
   getEmbedConfig,
   initProjectReviewEmbed,
 } from '../../lib/projectReviewEmbed';
@@ -75,6 +77,7 @@ async function handleIcGbRequestMessage(
       });
       await msg.reply('your request was successfully submitted for review.');
     } catch (error) {
+      console.log(error);
       return;
     }
   }
@@ -125,6 +128,71 @@ async function handleDescriptionModalInteraction(
   }
 }
 
+async function handleIcGbReviewInteraction(
+  interaction: ButtonInteraction,
+  client: Client
+): Promise<void> {
+  // Only handle interactions in the IC/GB review channel
+  // console.log(interaction);
+  if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
+    return;
+  }
+  if (interaction.message.embeds.length === 0) {
+    return;
+  }
+  const typedMessage = interaction.message;
+  const guild = await client.guilds.fetch(config.FORTIES_GUILD);
+  const reviewer = interaction.user;
+
+  if (interaction.customId === 'approveProjectReview') {
+    const reviewParams = extractReviewParamsFromEmbed(
+      interaction.message.embeds[0] as CompletedProjectReviewEmbed
+    );
+
+    const validParams = await ReviewParams.validate(reviewParams, guild);
+    if (validParams) {
+      await Promise.allSettled([
+        CreateProject.boilerplate(reviewParams, guild, reviewer, client),
+        interaction.reply({
+          content: 'Project approved: generated boilerplate',
+        }),
+        typedMessage.edit({
+          components: [
+            new ActionRowBuilder<ButtonBuilder>().addComponents([
+              new ButtonBuilder()
+                .setCustomId('approveProjectReviewConfirmation')
+                .setLabel('Approved')
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true),
+            ]),
+          ],
+        }),
+      ]);
+    } else {
+      await interaction.reply('Role or channel already exists.');
+    }
+  }
+
+  if (interaction.customId === 'rejectProjectReview') {
+    await Promise.allSettled([
+      interaction.reply({
+        content: 'Please let the user know why their project was rejected.',
+      }),
+      typedMessage.edit({
+        components: [
+          new ActionRowBuilder<ButtonBuilder>().addComponents([
+            new ButtonBuilder()
+              .setCustomId('rejectProjectReviewConfirmation')
+              .setLabel('Rejected')
+              .setStyle(ButtonStyle.Danger)
+              .setDisabled(true),
+          ]),
+        ],
+      }),
+    ]);
+  }
+}
+
 async function DEPRECATED_handleIcGbReviewInteraction(
   interaction: ButtonInteraction,
   client: Client
@@ -134,8 +202,11 @@ async function DEPRECATED_handleIcGbReviewInteraction(
   if (interaction.channelId !== config.IC_GB_REVIEW_CHANNEL) {
     return;
   }
+  if (interaction.message.embeds.length > 0) {
+    return;
+  }
   const typedMessage = interaction.message;
-  const guild = typedMessage.guild as Guild;
+  const guild = await client.guilds.fetch(config.FORTIES_GUILD);
   const reviewer = interaction.user;
 
   if (interaction.customId === 'approveProjectReview') {
@@ -271,5 +342,6 @@ export {
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
   DEPRECATED_handleIcGbReviewInteraction,
+  handleIcGbReviewInteraction,
   handleDescriptionModalInteraction,
 };

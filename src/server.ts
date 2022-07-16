@@ -19,10 +19,15 @@ import {
   DEPRECATED_handleIcGbReviewInteraction,
   handleProjectAnnouncementInteraction,
   handleProjectAnnouncementReaction,
+  handleIcGbReviewInteraction,
 } from './handlers/project';
 import fetchPartial from './utils/fetchPartial';
 import callHandlers from './utils/callHandlers.js';
 import { handleShowcaseCommand } from './handlers/showcaseCommand.js';
+
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled promise rejection:', error);
+});
 
 function messageShouldBeHandled(msg: Message): boolean {
   // Ignore messages from bots
@@ -72,6 +77,7 @@ client.on('interactionCreate', async (interaction) => {
   if (!interactionShouldBeHandled(interaction)) return;
   if (interaction.isButton()) {
     await callHandlers(
+      handleIcGbReviewInteraction(interaction, client),
       DEPRECATED_handleIcGbReviewInteraction(interaction, client),
       handleProjectAnnouncementInteraction(interaction)
     );

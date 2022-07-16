@@ -8,12 +8,18 @@ import {
   OverwriteResolvable,
   Snowflake,
   User,
-  ChannelType,
   ActionRowBuilder,
   ButtonStyle,
   PermissionFlagsBits,
   ButtonBuilder,
   AttachmentBuilder,
+  ChannelType,
+  CategoryChannelType,
+  TextChannelType,
+  GuildTextChannelType,
+  PermissionsBitField,
+  CategoryChannel,
+  NonThreadGuildBasedChannel,
 } from 'discord.js';
 import AnnouncementParams from './announcementParams';
 import { ProjectAnnouncementParams } from './announcementParams';
@@ -24,13 +30,18 @@ async function generateProjectBoilerplate(
   reviewer: User,
   client: Client
 ): Promise<void> {
+  console.log('generating project boilerplate with params:');
+  console.log(reviewParams);
   const role = await createProjectRole(
     reviewParams.name,
     guild,
     reviewer.id,
     client
   );
+  console.log('creating project channel');
   const channel = await createProjectChannel(reviewParams, guild, role);
+  console.log('created project channel');
+  // console.log(channel);
   const projectAnnouncementParams = AnnouncementParams.generate(
     reviewParams.ownerId,
     role.id
@@ -68,6 +79,34 @@ async function sortCategoryChannels(
   guild: Guild,
   categoryId: Snowflake
 ): Promise<void> {
+  // TODO: Re-enable this once issue with setPositions is fixed
+  // const parent = await guild.channels.fetch(categoryId);
+  // if (parent?.type !== ChannelType.GuildCategory) {
+  //   return;
+  // }
+  // // parent.children.
+  // const channelsInCategory = [...parent.children.valueOf().values()];
+  // const nonThreadChannels = channelsInCategory.filter(
+  //   (channel) => !channel.isThread()
+  // ) as NonThreadGuildBasedChannel[];
+  // nonThreadChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
+  // console.log('about to set the positions');
+
+  // const channelPositions = nonThreadChannels.map((channel, position) => ({
+  //   channel: channel.id,
+  //   position,
+  //   parent: parent.id,
+  // }));
+
+  // // console.log('the positions are', channelPositions);
+  // try {
+  //   console.log(guild.channels);
+  //   await guild.channels.setPositions(channelPositions);
+  // } catch (e) {
+  //   console.log(e);
+  //   throw e;
+  // }
+
   // TODO: There's something wrong with the typings in this function, fix them.
   // const category =
   await guild.channels.fetch(categoryId);
@@ -87,18 +126,25 @@ async function createProjectChannel(
 ): Promise<TextChannel> {
   const categoryId =
     reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
+  console.log('getting the permissions');
+  const permissions = getProjectChannelPermissions(
+    guild,
+    role.id,
+    reviewParams.ownerId,
+    reviewParams.type
+  );
+  console.log('got the permissions');
+  console.log('creating channel itself');
   const newChannel = await guild.channels.create({
     name: reviewParams.slug,
     type: ChannelType.GuildText,
     parent: categoryId,
-    permissionOverwrites: getProjectChannelPermissions(
-      guild,
-      role.id,
-      reviewParams.ownerId,
-      reviewParams.type
-    ),
+    permissionOverwrites: permissions,
   });
+  console.log('created channel itself');
+  console.log('sorting channels');
   await sortCategoryChannels(guild, categoryId);
+  console.log('sorted channels');
   return newChannel;
 }
 

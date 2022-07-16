@@ -7,9 +7,11 @@ import {
   Message,
   ButtonBuilder,
   ChatInputCommandInteraction,
+  Embed,
 } from 'discord.js';
 import slugify from 'slugify';
 import config from '../config';
+import { ProjectReviewParams } from '../handlers/project/reviewParams';
 
 interface ProjectReviewEmbedConfig {
   title: string;
@@ -41,8 +43,53 @@ interface ProjectReviewEmbedConfig {
     {
       name: 'creator';
       value: string;
+      inline: true;
+    },
+    {
+      name: 'creator-name';
+      value: string;
+      inline: true;
     }
   ];
+}
+
+interface CompletedProjectReviewEmbed extends Embed {
+  fields: [
+    {
+      name: 'type';
+      value: 'IC' | 'GB';
+    },
+    {
+      name: 'name';
+      value: string;
+      inline: true;
+    },
+    {
+      name: 'slug';
+      value: string;
+      inline: true;
+    },
+    {
+      name: 'description';
+      value: string;
+    },
+    {
+      name: 'creator';
+      value: string;
+      inline: true;
+    },
+    {
+      name: 'creator-name';
+      value: string;
+      inline: true;
+    }
+  ];
+  image: {
+    url: string;
+    proxyURL: string;
+    height: number;
+    width: number;
+  };
 }
 
 function formatSlug(projectName: string): string {
@@ -163,7 +210,13 @@ async function getEmbedConfig(
         },
         {
           name: 'creator',
+          value: interaction.user.id,
+          inline: true,
+        },
+        {
+          name: 'creator-name',
           value: interaction.user.tag,
+          inline: true,
         },
       ],
     };
@@ -176,4 +229,40 @@ async function getEmbedConfig(
   }
 }
 
-export { initProjectReviewEmbed, activateProjectReviewEmbed, getEmbedConfig };
+function getEmbedField(
+  embed: CompletedProjectReviewEmbed,
+  fieldName: string
+): string {
+  const field = embed.fields.find((field) => field.name === fieldName);
+  if (field === undefined) {
+    throw TypeError(
+      `${fieldName} is not a field in the embed ${JSON.stringify(
+        embed.toJSON()
+      )}`
+    );
+  }
+  return field.value;
+}
+
+function extractReviewParamsFromEmbed(
+  embed: CompletedProjectReviewEmbed
+): ProjectReviewParams {
+  return {
+    version: '1.0.1',
+    type: getEmbedField(embed, 'type'),
+    name: getEmbedField(embed, 'name').trim(),
+    description: getEmbedField(embed, 'description'),
+    slug: getEmbedField(embed, 'slug'),
+    ownerId: getEmbedField(embed, 'creator'),
+    imageUrl: embed.image?.proxyURL,
+  };
+}
+
+export type { CompletedProjectReviewEmbed };
+
+export {
+  initProjectReviewEmbed,
+  activateProjectReviewEmbed,
+  getEmbedConfig,
+  extractReviewParamsFromEmbed,
+};
