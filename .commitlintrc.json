@@ -1,4 +1,24 @@
 {
   "extends": ["@commitlint/config-conventional"],
-  "scope-enum": ["project", "showcase", "soundtest"]
+  "scope-enum": ["project", "showcase", "soundtest"],
+  "rules": {
+    "scope-enum": [2, "always", ["project", "showcase", "soundtest"]],
+    "type-enum": [
+      2,
+      "always",
+      [
+        "build",
+        "chore",
+        "ci",
+        "dev",
+        "docs",
+        "feat",
+        "fix",
+        "style",
+        "refactor",
+        "test",
+        "revert"
+      ]
+    ]
+  }
 }

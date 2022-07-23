@@ -1,6 +1,13 @@
-.env*
-node_modules/
-build
 .eslintcache
 .vscode/
 .ds_store
+
+# Dev install/build artifacts
+node_modules/
+build
+
+# Personal dev environment variables
+.env*
+
+# Local dev database files
+data

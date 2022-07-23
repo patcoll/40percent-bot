@@ -10,5 +10,5 @@
     "lib": ["ESNext"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", ".env*"]
+  "exclude": ["node_modules", ".env*", "ecosystem.config.js"]
 }
