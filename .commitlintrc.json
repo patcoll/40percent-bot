@@ -11,6 +11,7 @@
         "chore",
         "ci",
         "dev",
+        "deps",
         "docs",
         "feat",
         "fix",
