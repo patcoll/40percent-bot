@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgres://fortys-bot-dev:fortys-bot-dev@db:5432/fortys-bot-dev"
+}
+
+model User {
+  snowflakeId   String    @unique
+  ownedProjects Project[] @relation("Owns")
+}
+
+model Project {
+  id                 Int                @id @default(autoincrement())
+  reviewEmbedSnowflakeId String? @unique
+  announcementEmbedSnowflakeId String? @unique
+  channelSnowflakeId String?
+  name               String
+  slug               String
+  status             ProjectStatus
+  requestType        ProjectRequestType
+  description        String?
+  owner              User               @relation("Owns", fields: [ownerId], references: [snowflakeId])
+  ownerId            String
+  image              Image?
+
+  @@unique([slug, status])
+}
+
+model Image {
+  id        Int     @id @default(autoincrement())
+  url       String
+  proxyURL  String
+  height    Int
+  width     Int
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int     @unique
+}
+
+enum ProjectRequestType {
+  IC
+  GB
+}
+
+enum ProjectStatus {
+  PendingDescription
+  Requested
+  Rejected
+  InterestCheck
+  GroupBuy
+  PostGroupBuy
+  Archived
+  InterestCheckDoldrums
+  GroupBuyHell
+}
