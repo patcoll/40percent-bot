@@ -49,8 +49,8 @@ function getEmbedConfig(project: CreatedProject) {
         inline: true,
       },
       {
-        name: ProjectAnnouncementEmbedField.Channel,
-        value: `<#${project.channelSnowflakeId}>`,
+        name: ProjectAnnouncementEmbedField.Role,
+        value: `<@&${project.roleSnowflakeId}>`,
         inline: true,
       },
     ],
