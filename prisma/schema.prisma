@@ -21,6 +21,7 @@ model Project {
   reviewEmbedSnowflakeId String? @unique
   announcementEmbedSnowflakeId String? @unique
   channelSnowflakeId String?
+  roleSnowflakeId String?
   name               String
   slug               String
   status             ProjectStatus

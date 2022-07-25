@@ -1,4 +1,3 @@
-import config from '../../config';
 import {
   Client,
   TextChannel,
@@ -11,52 +10,53 @@ import {
   NonThreadGuildBasedChannel,
 } from 'discord.js';
 import {
-  createAnnouncement,
-  getAnnouncementEmbedFromReviewEmbed,
-} from '../../lib/announcementEmbed';
-import {
-  CompletedProjectReviewEmbed,
-  getEmbedField,
-} from '../../lib/projectReviewEmbed';
+  PrismaClient,
+  ProjectRequestType,
+  ProjectStatus,
+} from '@prisma/client';
+import config from '../../../config';
+import setProjectBoilerplate from '../db/setProjectBoilerplate';
 
-async function generateProjectBoilerplate(
-  reviewEmbed: CompletedProjectReviewEmbed,
+async function createProjectBoilerplate(
+  client: Client,
   guild: Guild,
-  reviewerId: Snowflake,
-  client: Client
+  reviewEmbedMessageId: Snowflake
 ): Promise<void> {
-  const roleName = getEmbedField(reviewEmbed, 'name');
-  const role = await createProjectRole(roleName, guild, reviewerId, client);
-  const ownerId = getEmbedField(reviewEmbed, 'creator');
-  const channel = await createProjectChannel(
-    getEmbedField(reviewEmbed, 'type') as 'IC' | 'GB',
-    ownerId,
-    getEmbedField(reviewEmbed, 'slug'),
-    guild,
-    role
-  );
-  await announceProject(reviewEmbed, role.id, channel, client);
-}
-
-async function createProjectRole(
-  roleName: string,
-  guild: Guild,
-  reviewerId: string,
-  client: Client
-): Promise<Role> {
-  // First create the role
+  const prisma = new PrismaClient();
+  const project = await prisma.project.findUnique({
+    where: { reviewEmbedSnowflakeId: reviewEmbedMessageId },
+    include: {
+      owner: true,
+      image: true,
+    },
+  });
+  if (project === null) {
+    throw Error(
+      `No project associated with review message ${reviewEmbedMessageId}`
+    );
+  }
+  const roleName = project.name;
   const role = await guild.roles.create({
     name: roleName,
     mentionable: true,
   });
-  // Then create the rank for manual add/removal
-  const botCommandsChannel = (await client.channels.fetch(
-    config.BOT_COMMANDS_CHANNEL
-  )) as TextChannel;
-  await botCommandsChannel.send(
-    `<@${reviewerId}> please enter \`?addrank ${roleName}\` to create the project rank.`
+  const ownerId = project.owner.snowflakeId;
+  const channel = await createProjectChannel(
+    project.requestType === ProjectRequestType.IC ? 'IC' : 'GB',
+    ownerId,
+    project.slug,
+    guild,
+    role
   );
-  return role;
+  const projectStatus = ProjectRequestType.IC
+    ? ProjectStatus.InterestCheck
+    : ProjectStatus.GroupBuy;
+  await setProjectBoilerplate(
+    reviewEmbedMessageId,
+    projectStatus,
+    channel.id,
+    role.id
+  );
 }
 
 async function sortCategoryChannels(
@@ -143,7 +143,7 @@ function getProjectChannelPermissions(
       },
     ];
   } else {
-    //if (projectType === 'GB')
+    // projectType === 'GB'
     return [
       // make the owner a project-channel level mod
       {
@@ -159,20 +159,4 @@ function getProjectChannelPermissions(
   }
 }
 
-async function announceProject(
-  reviewEmbed: CompletedProjectReviewEmbed,
-  roleId: string,
-  channel: TextChannel,
-  client: Client
-): Promise<void> {
-  const announcementEmbed = getAnnouncementEmbedFromReviewEmbed(
-    reviewEmbed,
-    roleId,
-    channel.id
-  );
-  await createAnnouncement(announcementEmbed, client);
-}
-
-export default {
-  boilerplate: generateProjectBoilerplate,
-};
+export default createProjectBoilerplate;

@@ -2,27 +2,23 @@ import config from './config.js';
 import {
   Client,
   Message,
-  MessageReaction,
-  PartialMessageReaction,
-  User,
   Interaction,
   Partials,
   IntentsBitField,
   InteractionType,
+  Guild,
+  ButtonInteraction,
 } from 'discord.js';
 import handleShowcaseMessage from './handlers/showcase';
 import handleSoundtestMessage from './handlers/soundtest';
-import {
-  handleDescriptionModalInteraction,
-  handleIcGbRequestInteraction,
-  handleIcGbRequestMessage,
-  handleProjectAnnouncementInteraction,
-  handleProjectAnnouncementReaction,
-  handleIcGbReviewInteraction,
-} from './handlers/project';
 import fetchPartial from './utils/fetchPartial';
 import callHandlers from './utils/callHandlers.js';
 import { handleShowcaseCommand } from './handlers/showcaseCommand.js';
+
+import handleProjectCommand from './project/_handle';
+import handleDescriptionModalInteraction from './project/create/descriptionModal/_handle.js';
+import handleProjectReviewInteraction from './project/create/review/_handle.js';
+import handleAnnouncementInteraction from './project/create/announcement/_handle.js';
 
 process.on('unhandledRejection', (error) => {
   console.error('Unhandled promise rejection:', error);
@@ -34,18 +30,9 @@ function messageShouldBeHandled(msg: Message): boolean {
   return !msg.author.bot && msg.guild?.id === config.FORTIES_GUILD;
 }
 
-function reactionShouldBeHandled(
-  reaction: MessageReaction | PartialMessageReaction,
-  user: User
-) {
-  // Ignore reactions from bots
-  // Ignore reactions from DMs
-  return !user.bot && reaction.message.guild?.id === config.FORTIES_GUILD;
-}
-
 function interactionShouldBeHandled(interaction: Interaction) {
-  // Ignore reactions from bots
-  // Ignore reactions from DMs
+  // Ignore interactions from bots
+  // Ignore interactions from DMs
   return !interaction.user.bot && interaction.guildId === config.FORTIES_GUILD;
 }
 
@@ -75,13 +62,17 @@ client.on('error', (err) => {
 client.on('interactionCreate', async (interaction) => {
   if (!interactionShouldBeHandled(interaction)) return;
   if (interaction.isButton()) {
-    await callHandlers(
-      handleIcGbReviewInteraction(interaction, client),
-      handleProjectAnnouncementInteraction(interaction)
-    );
+    await handleProjectReviewInteraction(interaction, client);
+    if (interaction.guild !== null) {
+      await handleAnnouncementInteraction(
+        interaction as ButtonInteraction & { guild: Guild }
+      );
+    }
   }
   if (interaction.isChatInputCommand()) {
-    await handleIcGbRequestInteraction(interaction, client);
+    if (interaction.commandName === 'project') {
+      await handleProjectCommand(client, interaction);
+    }
   }
   if (interaction.isMessageContextMenuCommand()) {
     await handleShowcaseCommand(interaction, client);
@@ -98,32 +89,7 @@ client.on('messageCreate', async (msg) => {
 
   await callHandlers(
     handleShowcaseMessage(msg, client),
-    handleSoundtestMessage(msg, client),
-    handleIcGbRequestMessage(msg, client)
-  );
-});
-
-client.on('messageReactionAdd', async (reaction, user) => {
-  await Promise.all([fetchPartial(reaction), fetchPartial(user)]);
-  if (user.partial) {
-    return;
-  }
-
-  if (!reactionShouldBeHandled(reaction, user)) return;
-
-  await callHandlers(handleProjectAnnouncementReaction(reaction, user, 'add'));
-});
-
-client.on('messageReactionRemove', async (reaction, user) => {
-  await Promise.all([fetchPartial(reaction), fetchPartial(user)]);
-  if (user.partial) {
-    return;
-  }
-
-  if (!reactionShouldBeHandled(reaction, user)) return;
-
-  await callHandlers(
-    handleProjectAnnouncementReaction(reaction, user, 'remove')
+    handleSoundtestMessage(msg, client)
   );
 });
 

@@ -1,19 +1,19 @@
 import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
-  Message,
   ModalBuilder,
+  Snowflake,
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
 
 async function showDescriptionInputModal(
   interaction: ChatInputCommandInteraction,
-  reviewEmbedMessage: Message
+  reviewEmbedMessageId: Snowflake
 ): Promise<void> {
   await interaction.showModal(
     new ModalBuilder()
-      .setCustomId(`proj-${reviewEmbedMessage.id}`)
+      .setCustomId(`proj-${reviewEmbedMessageId}`)
       .setTitle('Describe')
       .addComponents([
         new ActionRowBuilder<TextInputBuilder>().addComponents([
