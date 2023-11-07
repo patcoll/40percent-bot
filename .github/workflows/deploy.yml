@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      fly_env:
+        description: 'The Fly.io app to deploy to.'
+        type: string
+        default: '40percent-bot-staging'
+    secrets:
+      FLY_API_TOKEN:
+        description: 'The Fly.io API token used to deploy.'
+        required: true
+  workflow_dispatch:
+    inputs:
+      fly_env:
+        description: 'The Fly.io app to deploy to.'
+        default: '40percent-bot-staging'
+        type: choice
+        options:
+          - 40percent-bot-staging
+          - 40percent-bot-prod
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.fly_env }}
+    runs-on: ubuntu-latest
+    concurrency: deploy-${{ inputs.fly_env }}
+    env:
+      CARGO_TERM_COLOR: always
+      DOCKER_BUILDKIT: 1
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: "flyctl deploy --local-only -a ${{ inputs.fly_env }}"
+
