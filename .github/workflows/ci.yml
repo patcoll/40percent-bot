@@ -15,19 +15,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '18.18.0'
 
-      - name: npm install
-        run: npm ci
+      - run: npm ci --include=dev
 
-      - name: Run eslint on changed files
-        uses: tj-actions/eslint-changed-files@v6.5
+      - uses: tj-actions/eslint-changed-files@v21
         with:
           config_path: ".eslintrc.json"
 
@@ -43,11 +39,9 @@ jobs:
         with:
           node-version: '18.18.0'
 
-      - name: npm install
-        run: npm ci
+      - run: npm ci --include=dev
 
-      - name: Run Prettier
-        run: npx prettier 'src/**/*.ts' --check --config .prettierrc.json
+      - run: npx prettier 'src/**/*.ts' --check --config .prettierrc.json
 
   test:
     runs-on: ubuntu-latest
