@@ -23,8 +23,9 @@ export default async function handleShowcaseMessage(
       '.(jpe?g|png|gif|bmp|webp|tiff?)$',
       'i'
     );
+
     const image = msg.attachments.find((attachment) =>
-      acceptedFileFormats.test(attachment.url)
+      acceptedFileFormats.test(attachment.name ?? '')
     );
 
     if (!image) {
