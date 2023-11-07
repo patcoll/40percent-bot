@@ -3,7 +3,8 @@ import {
   Client,
   TextChannel,
   MessageEmbed,
-  MessageAttachment,
+  MessageActionRow,
+  MessageButton,
 } from 'discord.js';
 import config from '../config';
 
@@ -51,13 +52,6 @@ export default async function handleShowcaseMessage(
         icon_url: msg.author.avatarURL() ?? msg.author.defaultAvatarURL,
       },
       description: trimDescription(msg.content),
-      fields: [
-        {
-          name: 'Original Message',
-          value: `[Jump 🔗](${msg.url})`,
-          inline: false,
-        },
-      ],
       image: {
         url: image.url,
         proxyURL: image.proxyURL,
@@ -70,7 +64,17 @@ export default async function handleShowcaseMessage(
       },
     });
 
-    const embedMessage = await showcaseChannel.send(embed);
+    const msgLinkButton = new MessageActionRow().addComponents(
+      new MessageButton()
+        .setLabel('Original Message')
+        .setStyle('LINK')
+        .setURL(msg.url)
+    );
+
+    const embedMessage = await showcaseChannel.send({
+      embeds: [embed],
+      components: [msgLinkButton],
+    });
 
     console.log('40s channel posted showcase:', {
       author: msg.author.tag,

@@ -9,6 +9,9 @@ import {
   Snowflake,
   MessageAttachment,
   User,
+  MessageActionRow,
+  MessageButton,
+  CategoryChannel,
 } from 'discord.js';
 import AnnouncementParams from './announcementParams';
 import { ProjectAnnouncementParams } from './announcementParams';
@@ -46,19 +49,31 @@ async function createProjectRole(
 ): Promise<Role> {
   // First create the role
   const role = await guild.roles.create({
-    data: {
-      name: roleName,
-      mentionable: true,
-    },
+    name: roleName,
+    mentionable: true,
   });
   // Then create the rank for manual add/removal
   const botCommandsChannel = (await client.channels.fetch(
     config.BOT_COMMANDS_CHANNEL
   )) as TextChannel;
   await botCommandsChannel.send(
-    `<@${reviewerId}> please enter \`?addrank ${roleName}\` to create the project rank, and remember to organize channels by alphabetical order`
+    `<@${reviewerId}> please enter \`?addrank ${roleName}\` to create the project rank.`
   );
   return role;
+}
+
+async function sortCategoryChannels(
+  guild: Guild,
+  categoryId: Snowflake
+): Promise<void> {
+  const category = await guild.channels.fetch(categoryId);
+  if (category instanceof CategoryChannel) {
+    const categoryChannels = [...category.children.values()];
+    categoryChannels.sort((a, b) => (a.name < b.name ? -1 : 1));
+    for await (const [index, channel] of categoryChannels.entries()) {
+      await channel.setPosition(index);
+    }
+  }
 }
 
 async function createProjectChannel(
@@ -66,9 +81,10 @@ async function createProjectChannel(
   guild: Guild,
   role: Role
 ): Promise<TextChannel> {
-  return guild.channels.create(reviewParams.slug, {
-    parent:
-      reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY,
+  const categoryId =
+    reviewParams.type === 'IC' ? config.IC_CATEGORY : config.GB_CATEGORY;
+  const newChannel = await guild.channels.create(reviewParams.slug, {
+    parent: categoryId,
     permissionOverwrites: getProjectChannelPermissions(
       guild,
       role.id,
@@ -76,6 +92,8 @@ async function createProjectChannel(
       reviewParams.type
     ),
   });
+  await sortCategoryChannels(guild, categoryId);
+  return newChannel;
 }
 
 function getProjectChannelPermissions(
@@ -141,13 +159,23 @@ async function announceProject(
   const serializedParams = AnnouncementParams.serialize(
     projectAnnouncementParams
   );
-  const msg = await announceChannel.send(
-    `Announcing the ${reviewParams.type} for ${reviewParams.name} by <@${reviewParams.ownerId}>!
-${reviewParams.description}
-To gain access to the project channel <#${channel.id}>, join the role <@&${projectAnnouncementParams.roleId}> by reacting to this announcement with :white_check_mark:!`,
-    [new MessageAttachment(reviewParams.imageUrl), serializedParams]
+  const joinLeaveRow = new MessageActionRow().addComponents(
+    new MessageButton()
+      .setCustomId('joinProjectRole')
+      .setLabel('Join')
+      .setStyle('SUCCESS'),
+    new MessageButton()
+      .setCustomId('leaveProjectRole')
+      .setLabel('Leave')
+      .setStyle('DANGER')
   );
-  await msg.react('✅');
+  await announceChannel.send({
+    content: `Announcing the ${reviewParams.type} for ${reviewParams.name} by <@${reviewParams.ownerId}>!
+    ${reviewParams.description}
+    To gain access to the project channel <#${channel.id}>, join the role <@&${projectAnnouncementParams.roleId}> with the button below!`,
+    files: [new MessageAttachment(reviewParams.imageUrl), serializedParams],
+    components: [joinLeaveRow],
+  });
 }
 
 export default {
