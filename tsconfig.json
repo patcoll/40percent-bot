@@ -3,10 +3,11 @@
     "module": "commonjs",
     "outDir": "build",
     "allowJs": false,
-    "target": "ES5",
+    "target": "ES6",
     "strict": true,
     "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": ["node_modules/@types"],
+    "lib": ["ESNext"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
