@@ -5,10 +5,10 @@
   "description": "A bot for the 40s mechanical keyboard Discord server.",
   "main": "server.js",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Warning: no test specified\" && exit 0",
-    "start": "tsc && node build/server.js",
+    "start": "node build/server.js",
     "watch": "concurrently \"tsc -w\" \"nodemon -e js build/server.js\"",
-    "postinstall": "tsc",
     "prepare": "husky install"
   },
   "dependencies": {
